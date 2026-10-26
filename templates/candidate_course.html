@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ course.course_name }} | LMS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        header {
+            background: #1e293b;
+            color: white;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        header h1 { margin: 0; font-size: 22px; }
+        header a { color: white; text-decoration: none; }
+
+        main {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .panel, .video-card {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .progress-track {
+            height: 14px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            background: #16a34a;
+            transition: width 0.4s ease;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .completed { background: #dcfce7; color: #166534; }
+        .available { background: #dbeafe; color: #1d4ed8; }
+        .locked { background: #fee2e2; color: #991b1b; }
+
+        .video-frame {
+            display: block;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border: none;
+            border-radius: 8px;
+            margin-top: 15px;
+            background: #0f172a;
+        }
+
+        video {
+            display: block;
+            width: 100%;
+            max-height: 550px;
+            margin-top: 15px;
+            background: #0f172a;
+            border-radius: 8px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 7px;
+            background: #2563eb;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #1d4ed8; }
+
+        .message {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .success { background: #dcfce7; color: #166534; }
+        .error, .danger { background: #fee2e2; color: #991b1b; }
+
+        .empty { color: #64748b; }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2563eb;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>{{ course.course_name }}</h1>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </header>
+
+    <main>
+        <a class="back-link" href="{{ url_for('candidate_dashboard') }}">
+            ← Back to My Courses
+        </a>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <section class="panel">
+            <h2>Course Progress</h2>
+
+            <p>
+                {{ completed_count }} of {{ total_count }} videos completed
+                ({{ percentage }}%)
+            </p>
+
+            <div
+                class="progress-track"
+                role="progressbar"
+                aria-label="Course progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="{{ percentage }}"
+            >
+                <div
+                    class="progress-fill"
+                    id="progress-fill"
+                    data-percentage="{{ percentage }}"
+                ></div>
+            </div>
+        </section>
+
+        <h2>Course Lessons</h2>
+
+        {% if videos %}
+            {% for video in videos %}
+                <section class="video-card">
+                    <h3>{{ video.sequence_no }}. {{ video.title }}</h3>
+
+                    {% if video.completed %}
+                        <span class="status completed">Completed</span>
+                    {% elif video.locked %}
+                        <span class="status locked">Locked</span>
+                    {% else %}
+                        <span class="status available">Available</span>
+                    {% endif %}
+
+                    {% if not video.locked %}
+
+                        {% if video.video_type == "youtube" %}
+                            {% set embed_url = video.video_url
+                                | replace("https://www.youtube.com/watch?v=", "https://www.youtube-nocookie.com/embed/")
+                                | replace("https://youtube.com/watch?v=", "https://www.youtube-nocookie.com/embed/")
+                                | replace("https://youtu.be/", "https://www.youtube-nocookie.com/embed/")
+                            %}
+
+                            <iframe
+                                class="video-frame"
+                                src="{{ embed_url }}"
+                                title="{{ video.title }}"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerpolicy="strict-origin-when-cross-origin"
+                                allowfullscreen
+                                loading="lazy"
+                            ></iframe>
+                        {% else %}
+                            <video
+                                controls
+                                preload="metadata"
+                                data-video-id="{{ video.id }}"
+                                src="{{ url_for('stream_candidate_video', video_id=video.id) }}"
+                            >
+                                Your browser does not support HTML video.
+                            </video>
+                        {% endif %}
+
+                        {% if not video.completed %}
+                            <form
+                                method="POST"
+                                action="{{ url_for('complete_candidate_video', video_id=video.id) }}"
+                                class="completion-form"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token() }}"
+                                >
+
+                                <button type="submit">
+                                    Mark Video as Completed
+                                </button>
+                            </form>
+                        {% endif %}
+
+                    {% else %}
+                        <p class="empty">
+                            Complete the previous lessons to unlock this video.
+                        </p>
+                    {% endif %}
+                </section>
+            {% endfor %}
+        {% else %}
+            <section class="panel empty">
+                No videos have been added to this course yet.
+            </section>
+        {% endif %}
+    </main>
+
+    <script>
+        const progressBar = document.getElementById("progress-fill");
+
+        if (progressBar) {
+            const rawPercentage = Number(progressBar.dataset.percentage);
+            const percentage = Number.isFinite(rawPercentage)
+                ? Math.min(100, Math.max(0, rawPercentage))
+                : 0;
+
+            progressBar.style.width = percentage + "%";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Courses | LMS</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        header {
+            background: #1e293b;
+            color: white;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        header a {
+            color: white;
+            background: #dc2626;
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .welcome {
+            margin-bottom: 25px;
+        }
+
+        .welcome p {
+            color: #64748b;
+        }
+
+        .message {
+            padding: 12px;
+            margin-bottom: 18px;
+            border-radius: 6px;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 22px;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .course-card h3 {
+            margin-top: 0;
+            font-size: 21px;
+        }
+
+        .description {
+            color: #64748b;
+            min-height: 45px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 20px 0 8px;
+            font-size: 14px;
+        }
+
+        .progress-track {
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            background: #16a34a;
+            border-radius: 20px;
+            transition: width 0.4s ease;
+        }
+
+        .course-button {
+            display: block;
+            text-align: center;
+            margin-top: 22px;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 7px;
+        }
+
+        .course-button:hover {
+            background: #1d4ed8;
+        }
+
+        .empty {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>My Learning Dashboard</h1>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </header>
+
+    <main>
+        <section class="welcome">
+            <h2>Welcome, {{ session.get('username', 'Candidate') }}!</h2>
+            <p>Select a course and continue your learning.</p>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="message">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <h2>Available Courses</h2>
+
+        {% if courses %}
+            <section class="course-grid">
+                {% for course in courses %}
+                    <article class="course-card">
+                        <h3>{{ course.course_name }}</h3>
+
+                        <p class="description">
+                            {{ course.description or "No description available." }}
+                        </p>
+
+                        <div class="progress-info">
+                            <span>
+                                {{ course.completed_videos }} /
+                                {{ course.total_videos }} videos completed
+                            </span>
+
+                            <strong>{{ course.percentage }}%</strong>
+                        </div>
+
+                        <div class="progress-track">
+                            <div
+                                class="progress-fill"
+                                data-percentage="{{ course.percentage }}"
+                            ></div>
+                        </div>
+
+                        <a
+                            class="course-button"
+                            href="{{ url_for('candidate_course', course_id=course.id) }}"
+                        >
+                            {% if course.percentage == 100 %}
+                                Review Course
+                            {% else %}
+                                Continue Learning
+                            {% endif %}
+                        </a>
+                    </article>
+                {% endfor %}
+            </section>
+        {% else %}
+            <div class="empty">
+                <h3>No courses available yet</h3>
+                <p>Please check back after the administrator adds courses.</p>
+            </div>
+        {% endif %}
+    </main>
+
+    <script>
+        document.querySelectorAll(".progress-fill").forEach(function (bar) {
+            const percentage = Number(bar.dataset.percentage);
+            const safePercentage = Math.min(100, Math.max(0, percentage || 0));
+            bar.style.width = safePercentage + "%";
+        });
+    </script>
+</body>
+</html>

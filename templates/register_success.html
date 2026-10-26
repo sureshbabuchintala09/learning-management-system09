@@ -1,0 +1,22 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Successful</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Registration Successful!</h1>
+
+    <p>Welcome, {{ full_name }}.</p>
+    <p>Your Candidate ID is:</p>
+
+    <h2>{{ candidate_code }}</h2>
+
+    <p>Please save this ID for future login.</p>
+
+    <a href="{{ url_for('login') }}">Go to Login</a>
+</body>
+</html>

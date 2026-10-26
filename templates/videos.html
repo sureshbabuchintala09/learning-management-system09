@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Videos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Video Management</h1>
+    <h2>Course: {{ course.course_name }}</h2>
+
+    <p><a href="{{ url_for('manage_courses') }}">Back to Courses</a></p>
+
+    {% with messages = get_flashed_messages() %}
+      {% for message in messages %}
+        <p>{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    <h2>Add Video</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        <label>Video Title</label><br>
+        <input name="title" required maxlength="200"><br><br>
+
+        <label>Video Type</label><br>
+        <select name="video_type" id="video_type" required>
+            <option value="youtube">YouTube Link</option>
+            <option value="mp4">Upload MP4</option>
+        </select><br><br>
+
+        <div id="youtube_field">
+            <label>YouTube URL</label><br>
+            <input type="url" name="video_url"
+                   placeholder="https://www.youtube.com/watch?v=...">
+        </div>
+
+        <div id="mp4_field" hidden>
+            <label>MP4 File (maximum 500 MB)</label><br>
+            <input type="file" name="video_file" accept=".mp4,video/mp4">
+        </div>
+
+        <br>
+        <label>Video Order</label><br>
+        <input type="number" name="sequence_no" min="1" required><br><br>
+
+        <button type="submit">Add Video</button>
+    </form>
+
+    <hr>
+
+    <h2>Videos in Order</h2>
+    <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+                <th>Order</th>
+                <th>Title</th>
+                <th>Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for video in videos %}
+            <tr>
+                <td>{{ video.sequence_no }}</td>
+                <td>{{ video.title }}</td>
+                <td>{{ video.video_type }}</td>
+                <td>
+                    {% if video.video_type == 'youtube' %}
+                        <a href="{{ video.video_url }}" target="_blank"
+                           rel="noopener noreferrer">Open YouTube</a>
+                    {% else %}
+                        Uploaded MP4
+                    {% endif %}
+
+                    <br><br>
+                    <a href="{{ url_for('edit_video', video_id=video.id) }}">
+                        Edit
+                    </a>
+
+                    <form method="POST"
+                          action="{{ url_for('delete_video', video_id=video.id) }}"
+                          onsubmit="return confirm('Delete this video?')">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4">No videos added yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        const typeSelect = document.getElementById("video_type");
+        const youtubeField = document.getElementById("youtube_field");
+        const mp4Field = document.getElementById("mp4_field");
+        const urlInput = document.querySelector('[name="video_url"]');
+        const fileInput = document.querySelector('[name="video_file"]');
+
+        function updateFields() {
+            const isMp4 = typeSelect.value === "mp4";
+            youtubeField.hidden = isMp4;
+            mp4Field.hidden = !isMp4;
+            urlInput.required = !isMp4;
+            fileInput.required = isMp4;
+        }
+
+        typeSelect.addEventListener("change", updateFields);
+        updateFields();
+    </script>
+</body>
+</html>
